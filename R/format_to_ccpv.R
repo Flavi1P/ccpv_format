@@ -4,7 +4,11 @@ require(dplyr)
 format_to_ccpv <- function(data, op_name = NA, entry_date = NA, pi_name = NA, pi_email = NA, pi_institut = NA, day_night = NA, sample_start = NA, sample_end = NA, sample_depth_int = NA, sample_sea_state = NA, flow_start = NA, flow_end = NA){
   
   data <- data |> 
-    mutate(parsed_date = lubridate::ymd_hms(paste0(substr(date, 1, 8), substr(date, 10, 13), "00")))
+    mutate(parsed_date = lubridate::ymd_hms(paste0(substr(date, 1, 8), substr(date, 10, 13), "00")),
+           jar_qc = substr(sample_qc, 1, 1),
+           plankton_qc = substr(sample_qc, 2, 2),
+           conditionning_qc = substr(sample_qc, 3, 3),
+           purity_qc = substr(sample_qc, 4, 4))
   
   formatted_data <- data |> mutate("Operator first and last name" = op_name,
                                    "Entry date (YYYY/MM/DD)" = entry_date,
@@ -54,11 +58,21 @@ format_to_ccpv <- function(data, op_name = NA, entry_date = NA, pi_name = NA, pi
                                                                  depth_qc == 2 ~ "CALCULATED from cable length and angle",
                                                                  depth_qc == 3 ~ "ESTIMATED from cable length",
                                                                  !depth_qc %in% c(1:3) ~ "NA"),
-                                   "Sample QC" = sample_qc,
+                                   "Jar QC" = case_when(jar_qc == 1 ~ "JAR airtighness OK",
+                                                        jar_qc == 2 ~ "JAR airtighness NOK"),
+                                   "Richness QC" = case_when(plankton_qc == 1 ~ "NORMAL richness",
+                                                             plankton_qc == 2 ~ "VERY RICH sample",
+                                                             plankton_qc == 3 ~ "NO PLANKTON (almost) in sample"),
+                                   "Conditionning QC" = case_when(conditionning_qc == 1 ~ "GOOD conditionning",
+                                                                  conditionning_qc == 2 ~ "DRYED (no remaining liquid)",
+                                                                  conditionning_qc == 3 ~ "ROTTEN (loss of fixative)"),
+                                   "Purity QC" = case_when(purity_qc == 1 ~ "NO disturbing elements",
+                                                           purity_qc == 2 ~ "ONE of FEW very large objects present in the jar",
+                                                           purity_qc == 3 ~ "SOUP (phytoplankton-organic matter-clay/mud/mineral)"),
                                    "Sample barcode" = barcode,
                                    "Sample ship speed (knots)" = ship_speed_knots,
-                                   "Sample jar number" = nb_jar)
-  
+                                   "Sample jar number" = nb_jar) |> 
+    select("Operator first and last name" : "Sample jar number")
   
   return(formatted_data)
 }
