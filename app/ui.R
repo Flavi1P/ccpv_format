@@ -11,7 +11,7 @@ library(shiny)
 
 # Define UI for application that draws a histogram
 fluidPage(
-  titlePanel("CSV to Excel Converter"),
+  titlePanel("CSV to Excel Converter for sampling table"),
   
   sidebarLayout(
     sidebarPanel(
@@ -19,20 +19,15 @@ fluidPage(
       textInput("output_name", "Enter Output File Name (without extension)"),
       textInput("operator_name", "Name and surname"),
       dateInput("selected_date", "Select Date", value = Sys.Date()), 
+      textInput("id_lot", "ID Lot"),
       textInput("pi_name", "PI Name and surname"),
       textInput("pi_email", "PI email address"),
       textInput("pi_institut", "PI Institut"),
-      textInput("sample_start_time", "Sample start time"),
-      textInput("sample_end_time", "Sample end time"),
-      textInput("sample_dpeth_intended", "Sample intended depth"),
-      textInput("sample_seastate", "Sample sea state"),
-      textInput("flow_meter_start", "Flow meter start"),
-      textInput("flow_meter_end", "Flow meter end"),
-      actionButton("generate_btn", "Generate Excel")
+      downloadButton("download_excel", "Download Excel File")
     ),
     
     mainPanel(
-      downloadButton("download_excel", "Download Excel File")
+      tableOutput("preview_table")
     )
   )
 )

@@ -1,16 +1,38 @@
 require(lubridate)
 require(dplyr)
+library(suncalc)
 
-format_to_ccpv <- function(data, op_name = NA, entry_date = NA, pi_name = NA, pi_email = NA, pi_institut = NA, day_night = NA, sample_start = NA, sample_end = NA, sample_depth_int = NA, sample_sea_state = NA, flow_start = NA, flow_end = NA){
+day_or_night <- function(longitude, latitude, datetime) {
+  date = as.Date(datetime)
+  # Calculate sunrise and sunset times
+  sun_times <- getSunlightTimes(date, latitude, longitude)
   
-  data <- data |> 
+  # Extract sunrise and sunset times
+  sunrise <- sun_times$sunrise
+  sunset <- sun_times$sunset
+  
+  # Check if it's day or night at the specified datetime
+  if (datetime > sunrise & datetime < sunset) {
+    return("day")
+  } else {
+    return("night")
+  }
+}
+
+format_to_ccpv <- function(data, id_lot = NA, op_name = NA, entry_date = NA, pi_name = NA, pi_email = NA, pi_institut = NA, day_night = NA, sample_start = NA, sample_end = NA, sample_depth_int = NA, sample_sea_state = NA, flow_start = NA, flow_end = NA){
+  
+  data <- data|> 
     mutate(parsed_date = lubridate::ymd_hms(paste0(substr(date, 1, 8), substr(date, 10, 13), "00")),
+           start_time = sprintf("%02d:%02d", hour(parsed_date), minute(parsed_date)),
            jar_qc = substr(sample_qc, 1, 1),
            plankton_qc = substr(sample_qc, 2, 2),
            conditionning_qc = substr(sample_qc, 3, 3),
-           purity_qc = substr(sample_qc, 4, 4))
+           purity_qc = substr(sample_qc, 4, 4),
+           day_night = mapply(day_or_night, longitude, latitude, parsed_date))
   
-  formatted_data <- data |> mutate("Operator first and last name" = op_name,
+  formatted_data <- data |> mutate("ID Lot" = id_lot,
+                                   "Barcode" = NA,
+                                   "Operator first and last name" = op_name,
                                    "Entry date (YYYY/MM/DD)" = entry_date,
                                    "Project Name" = scientificprog,
                                    "PI first and last name" = pi_name,
@@ -21,7 +43,7 @@ format_to_ccpv <- function(data, op_name = NA, entry_date = NA, pi_name = NA, pi
                                    "Station ID" = stationid,
                                    "Sample date (YYYY/MM/DD)" = format(parsed_date, "%Y/%m/%d"),
                                    "Day/night" = day_night,
-                                   "Sample start time (HH:MM)" = sample_start, #Replace "hour start"
+                                   "Sample start time (HH:MM)" = start_time, #Replace "hour start"
                                    "Sample end time (HH:MM)" = sample_end, #Replace "hour end"
                                    "Sample start longitude" = longitude, #Replace longitude_start
                                    "Sample start latitude" = latitude, #Replace latitude_start
@@ -72,7 +94,7 @@ format_to_ccpv <- function(data, op_name = NA, entry_date = NA, pi_name = NA, pi
                                    "Sample barcode" = barcode,
                                    "Sample ship speed (knots)" = ship_speed_knots,
                                    "Sample jar number" = nb_jar) |> 
-    select("Operator first and last name" : "Sample jar number")
+    select("ID Lot" : "Sample jar number")
   
   return(formatted_data)
 }
