@@ -28,12 +28,17 @@ format_to_ccpv <- function(data, id_lot = NA, op_name = NA, entry_date = NA, pi_
            plankton_qc = substr(sample_qc, 2, 2),
            conditionning_qc = substr(sample_qc, 3, 3),
            purity_qc = substr(sample_qc, 4, 4),
-           day_night = mapply(day_or_night, longitude, latitude, parsed_date))
+           #day_night = mapply(day_or_night, longitude, latitude, parsed_date))
+           day_night = NA) |> 
+    mutate_all(~ifelse(is.nan(.) | . == 99999, NA, .))
+  
+  entry_date_format = lubridate::ymd(entry_date)
+  sample_date_format = lubridate::ymd(data$parsed_date)
   
   formatted_data <- data |> mutate("ID Lot" = id_lot,
                                    "Barcode" = NA,
                                    "Operator first and last name" = op_name,
-                                   "Entry date (YYYY/MM/DD)" = entry_date,
+                                   "Entry date (YYYY/MM/DD)" = format(entry_date_format, "%Y/%m/%d"),
                                    "Project Name" = scientificprog,
                                    "PI first and last name" = pi_name,
                                    "PI email address" = pi_email,
@@ -41,7 +46,7 @@ format_to_ccpv <- function(data, id_lot = NA, op_name = NA, entry_date = NA, pi_
                                    "Sample ID" = sampleid,
                                    "Ship" = ship,
                                    "Station ID" = stationid,
-                                   "Sample date (YYYY/MM/DD)" = format(parsed_date, "%Y/%m/%d"),
+                                   "Sample date (YYYY/MM/DD)" = format(sample_date_format, "%Y/%m/%d"),
                                    "Day/night" = day_night,
                                    "Sample start time (HH:MM)" = start_time, #Replace "hour start"
                                    "Sample end time (HH:MM)" = sample_end, #Replace "hour end"
@@ -60,10 +65,11 @@ format_to_ccpv <- function(data, id_lot = NA, op_name = NA, entry_date = NA, pi_
                                    "Sample CTD reference" = ctdref,
                                    "Sample other reference" = otherref,
                                    "Sample townb" = townb,
-                                   "Sample tow type" = case_when(towtype == 1 ~ "oblique", #Attribute a plain language value to the numerical code. If not 1,2 or 3 return NA.
-                                                                 towtype == 2 ~ "vertical",
-                                                                 towtype == 3 ~ "horizontal",
-                                                                 !towtype %in% c(1:3) ~ "NA"),
+                                   "Sample tow type" = case_when(towtype == 0 ~ "Other sampling method",
+                                                                 towtype == 1 ~ "oblique",
+                                                                 towtype == 2 ~ "Horizontal",
+                                                                 towtype == 3 ~ "Vertical",
+                                                                 !towtype %in% c(1:3) ~ "NA"), #Attribute a plain language value to the numerical code. If not 1,2 or 3 return NA.
                                    "Sample cable angle (degree)" = cable_angle,
                                    "Sample cable speed (m/s)" = cable_speed,
                                    "Sample net surface" = netsurf,
@@ -76,7 +82,7 @@ format_to_ccpv <- function(data, id_lot = NA, op_name = NA, entry_date = NA, pi_
                                                                   vol_qc == 2 ~ "CALCULATED volume (using the mean volume of other nets)",
                                                                   vol_qc == 3 ~ "ESTIMATED volume (net AREA x towed DISTANCE)",
                                                                   !vol_qc %in% c(1:3) ~ "NA"),
-                                   "Sample dpeth QC" = case_when(depth_qc == 1 ~ "MEASURED by a depth sensor",#Attribute a plain language value to the numerical code. If not 1,2 or 3 return NA.
+                                   "Sample depth QC" = case_when(depth_qc == 1 ~ "MEASURED by a depth sensor",#Attribute a plain language value to the numerical code. If not 1,2 or 3 return NA.
                                                                  depth_qc == 2 ~ "CALCULATED from cable length and angle",
                                                                  depth_qc == 3 ~ "ESTIMATED from cable length",
                                                                  !depth_qc %in% c(1:3) ~ "NA"),

@@ -22,7 +22,7 @@ fluidPage(
       textInput("id_lot", "ID Lot"),
       textInput("pi_name", "PI Name and surname"),
       textInput("pi_email", "PI email address"),
-      textInput("pi_institut", "PI Institut"),
+      textInput("pi_institut", "PI Inst itut"),
       downloadButton("download_excel", "Download Excel File")
     ),
     
