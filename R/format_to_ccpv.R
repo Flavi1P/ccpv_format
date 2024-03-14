@@ -21,7 +21,7 @@ day_or_night <- function(longitude, latitude, datetime) {
 
 format_to_ccpv <- function(data, id_lot = NA, op_name = NA, entry_date = NA, pi_name = NA, pi_email = NA, pi_institut = NA, day_night = NA, sample_start = NA, sample_end = NA, sample_depth_int = NA, sample_sea_state = NA, flow_start = NA, flow_end = NA){
   
-  data <- data|> 
+  data <- data|>
     mutate(parsed_date = lubridate::ymd_hms(paste0(substr(date, 1, 8), substr(date, 10, 13), "00")),
            start_time = sprintf("%02d:%02d", hour(parsed_date), minute(parsed_date)),
            jar_qc = substr(sample_qc, 1, 1),
@@ -29,8 +29,12 @@ format_to_ccpv <- function(data, id_lot = NA, op_name = NA, entry_date = NA, pi_
            conditionning_qc = substr(sample_qc, 3, 3),
            purity_qc = substr(sample_qc, 4, 4),
            #day_night = mapply(day_or_night, longitude, latitude, parsed_date))
-           day_night = NA) |> 
+           day_night = NA) |>  
     mutate_all(~ifelse(is.nan(.) | . == 99999, NA, .))
+  
+  sample_comment = iconv(data$sample_comment, "latin1", "UTF-8",sub='')
+  
+  data = select(data, - sample_comment)
   
   entry_date_format = lubridate::ymd(entry_date)
   sample_date_format = lubridate::ymd(data$parsed_date)

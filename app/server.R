@@ -6,7 +6,6 @@
 #
 #    https://shiny.posit.co/
 #
-
 library(shiny)
 library(readr)
 library(dplyr)
@@ -23,7 +22,8 @@ function(input, output, session) {
   
   read_csv_preview <- function(file_path) {
     if (file.exists(file_path)) {
-      df <- read_csv2(file_path)  # Read CSV file
+      df <- read_csv2(file_path) |> 
+        mutate(sample_comment = iconv(sample_comment, "latin1", "UTF-8",sub=''))# Read CSV file
       return(head(df))  # Display the first few rows as a preview
     } else {
       return(NULL)
